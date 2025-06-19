@@ -9,128 +9,93 @@ class Habit {
   List<int> specificDays; // 1 = Monday, 7 = Sunday
   int xTimesCount;
   DateTime? reminderTime;
-  bool notificationsEnabled;
-  List<DateTime> completedDates; // Armazena apenas a data (ano, mês, dia)
+  bool reminderEnabled;
+  List<String> completionDates; // Armazena strings de data: 'yyyy-mm-dd'
 
   Habit({
     required this.id,
     required this.name,
     this.frequency = HabitFrequency.daily,
-    List<int>? specificDays, // Parâmetro opcional e anulável
+    List<int>? specificDays,
     this.xTimesCount = 0,
     this.reminderTime,
-    this.notificationsEnabled = false,
-    List<DateTime>? completedDates, // Parâmetro opcional e anulável
-  }) : this.specificDays =
-           specificDays ?? const [], // Garante lista mutável se nula
-       this.completedDates =
-           completedDates ?? []; // Garante lista mutável se nula
+    this.reminderEnabled = false,
+    List<String>? completionDates,
+  })  : specificDays = specificDays ?? [],
+        completionDates = completionDates ?? [];
 
   // Método para marcar o hábito como concluído para uma data específica
   void markAsCompleted(DateTime date) {
-    // Normaliza a data para remover informações de hora, minuto, segundo
-    final normalizedDate = DateTime(date.year, date.month, date.day);
-    if (!completedDates.contains(normalizedDate)) {
-      completedDates.add(normalizedDate);
-      completedDates.sort(); // Mantém as datas ordenadas
+    final dateKey = '${date.year}-${date.month}-${date.day}';
+    if (!completionDates.contains(dateKey)) {
+      completionDates.add(dateKey);
+      completionDates.sort();
     }
   }
 
   // Método para verificar se o hábito foi concluído em uma data específica
   bool isCompletedOn(DateTime date) {
-    final normalizedDate = DateTime(date.year, date.month, date.day);
-    return completedDates.contains(normalizedDate);
+    final dateKey = '${date.year}-${date.month}-${date.day}';
+    return completionDates.contains(dateKey);
   }
 
   // Método para calcular a sequência (streak) atual
-  // [testCurrentDate] parâmetro opcional para facilitar testes unitários determinísticos
   int calculateCurrentStreak([DateTime? testCurrentDate]) {
-    if (completedDates.isEmpty) {
+    if (completionDates.isEmpty) {
       return 0;
     }
 
-    DateTime currentDate =
-        testCurrentDate ?? DateTime.now(); // Usa a data do teste se fornecida
-    // Normaliza a data atual para comparação
-    currentDate = DateTime(
-      currentDate.year,
-      currentDate.month,
-      currentDate.day,
-    );
+    DateTime currentDate = testCurrentDate ?? DateTime.now();
+    currentDate = DateTime(currentDate.year, currentDate.month, currentDate.day);
 
     int streak = 0;
 
-    // Primeiro, verifica se o hábito foi concluído HOJE (ou na data testCurrentDate)
+    // Verifica se foi concluído hoje
     if (isCompletedOn(currentDate)) {
       streak = 1;
-      currentDate = currentDate.subtract(
-        const Duration(days: 1),
-      ); // Retrocede para o dia anterior
+      currentDate = currentDate.subtract(const Duration(days: 1));
     } else {
-      // Se não foi concluído hoje, a sequência de hoje é 0, mas precisamos verificar
-      // se foi concluído ontem para iniciar uma contagem a partir de lá.
-      // Neste cenário, se não for feito hoje, a streak atual é 0.
       return 0;
     }
 
-    // Continua verificando os dias anteriores na lista de completedDates
-    // A lista completedDates já deve estar ordenada
-    // Itera do final para o começo para encontrar a sequência mais recente
-    for (int i = completedDates.length - 1; i >= 0; i--) {
-      final completedDate = completedDates[i];
-      final normalizedCompletedDate = DateTime(
-        completedDate.year,
-        completedDate.month,
-        completedDate.day,
-      );
-
-      // Se a data concluída é o dia anterior ao 'currentDate'
-      if (normalizedCompletedDate.isAtSameMomentAs(currentDate)) {
-        streak++;
-        currentDate = currentDate.subtract(
-          const Duration(days: 1),
-        ); // Retrocede mais um dia
-      } else if (normalizedCompletedDate.isBefore(currentDate)) {
-        // Se a data concluída é anterior ao dia esperado, a sequência foi quebrada
-        break;
-      }
-      // Se normalizedCompletedDate for depois de currentDate, ignoramos (não deveria acontecer se estiverem ordenadas)
+    // Continua verificando os dias anteriores
+    while (isCompletedOn(currentDate)) {
+      streak++;
+      currentDate = currentDate.subtract(const Duration(days: 1));
     }
 
     return streak;
   }
 
-  // Converte um Hábito para um mapa (útil para persistência de dados)
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'frequency': frequency.index,
-    'specificDays': specificDays,
-    'xTimesCount': xTimesCount,
-    'reminderTime': reminderTime?.toIso8601String(),
-    'notificationsEnabled': notificationsEnabled,
-    'completedDates': completedDates.map((d) => d.toIso8601String()).toList(),
-  };
+  // Converte um Hábito para um mapa
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'name': name,
+        'frequency': frequency.index,
+        'specificDays': specificDays,
+        'xTimesCount': xTimesCount,
+        'reminderTime': reminderTime?.toIso8601String(),
+        'reminderEnabled': reminderEnabled,
+        'completionDates': completionDates,
+      };
 
   // Cria um Hábito a partir de um mapa
-  factory Habit.fromJson(Map<String, dynamic> json) {
+  factory Habit.fromMap(Map<String, dynamic> map) {
     return Habit(
-      id: json['id'],
-      name: json['name'],
-      frequency: HabitFrequency.values[json['frequency']],
-      specificDays: List<int>.from(
-        json['specificDays'] ?? [],
-      ), // Garante que a lista não é nula
-      xTimesCount: json['xTimesCount'],
-      reminderTime: json['reminderTime'] != null
-          ? DateTime.parse(json['reminderTime'])
+      id: map['id'],
+      name: map['name'],
+      frequency: HabitFrequency.values[map['frequency']],
+      specificDays: List<int>.from(map['specificDays'] ?? []),
+      xTimesCount: map['xTimesCount'] ?? 0,
+      reminderTime: map['reminderTime'] != null
+          ? DateTime.parse(map['reminderTime'])
           : null,
-      notificationsEnabled: json['notificationsEnabled'],
-      completedDates:
-          (json['completedDates'] as List<dynamic>?)
-              ?.map((d) => DateTime.parse(d))
-              .toList() ??
-          [], // Garante que a lista não é nula
+      reminderEnabled: map['reminderEnabled'] ?? false,
+      completionDates: List<String>.from(map['completionDates'] ?? []),
     );
   }
+
+  // Mantém compatibilidade com versões antigas
+  Map<String, dynamic> toJson() => toMap();
+  factory Habit.fromJson(Map<String, dynamic> json) => Habit.fromMap(json);
 }

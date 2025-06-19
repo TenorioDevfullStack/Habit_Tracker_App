@@ -1,64 +1,506 @@
 // lib/screens/settings_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/habit_provider.dart';
+import '../models/habit.dart';
 // Futuramente, se tivermos configurações que dependem de estado (ex: tema, notificações gerais)
 // poderíamos usar um provider ou outro gerenciador de estado aqui.
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
   @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  bool _isTestingNotification = false;
+
+  @override
   Widget build(BuildContext context) {
+    final habitProvider = Provider.of<HabitProvider>(context);
+    
     return Scaffold(
-      appBar: AppBar(title: const Text('Configurações')),
+      appBar: AppBar(
+        title: const Text('Configurações'),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
       body: ListView(
+        padding: const EdgeInsets.all(16.0),
         children: [
-          ListTile(
-            title: const Text('Gerenciar Notificações'),
-            subtitle: const Text('Ative ou desative lembretes de hábitos'),
-            leading: const Icon(Icons.notifications),
-            onTap: () {
-              // Por enquanto, apenas um SnackBar.
-              // Futuramente, poderíamos navegar para uma tela de detalhes de notificação
-              // ou implementar um switch direto aqui para notificações globais.
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Configurações de notificações em breve!'),
+          // Seção de Notificações
+          _buildSectionCard(
+            title: 'Notificações',
+            icon: Icons.notifications,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.alarm, color: Colors.orange),
+                title: const Text('Reagendar Notificações'),
+                subtitle: const Text('Atualizar todos os lembretes'),
+                trailing: const Icon(Icons.refresh),
+                onTap: () async {
+                  await _showLoadingDialog('Reagendando notificações...');
+                  await habitProvider.rescheduleAllNotifications();
+                  Navigator.of(context).pop();
+                  _showSuccessSnackBar('Notificações reagendadas com sucesso!');
+                },
+              ),
+              
+              ListTile(
+                leading: const Icon(Icons.info_outline, color: Colors.blue),
+                title: const Text('Diagnóstico de Notificações'),
+                subtitle: const Text('Verificar status das notificações'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () async {
+                  await _showLoadingDialog('Verificando status...');
+                  await habitProvider.checkNotificationStatus();
+                  Navigator.of(context).pop();
+                  _showNotificationStatusDialog();
+                },
+              ),
+              
+              ListTile(
+                leading: Icon(
+                  Icons.bug_report, 
+                  color: _isTestingNotification ? Colors.grey : Colors.green,
                 ),
-              );
-            },
+                title: const Text('Testar Notificação'),
+                subtitle: const Text('Enviar notificação de teste agora'),
+                trailing: _isTestingNotification 
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.send),
+                onTap: _isTestingNotification ? null : () => _testNotification(),
+              ),
+            ],
           ),
-          const Divider(), // Uma linha divisória
-          ListTile(
-            title: const Text('Sobre o App'),
-            leading: const Icon(Icons.info),
-            onTap: () {
-              showAboutDialog(
-                context: context,
-                applicationName: 'Habit Tracker',
-                applicationVersion: '1.0.0 (MVP)',
-                applicationLegalese:
-                    '© 2025 Seu Nome/Empresa. Todos os direitos reservados.',
+          
+          const SizedBox(height: 16),
+          
+          // Seção de Dados
+          _buildSectionCard(
+            title: 'Dados',
+            icon: Icons.storage,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.analytics, color: Colors.purple),
+                title: const Text('Estatísticas'),
+                subtitle: Text('${habitProvider.habits.length} hábitos criados'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showStatsDialog(habitProvider),
+              ),
+              
+              ListTile(
+                leading: const Icon(Icons.backup, color: Colors.teal),
+                title: const Text('Backup Local'),
+                subtitle: const Text('Dados salvos automaticamente'),
+                trailing: Icon(
+                  Icons.check_circle,
+                  color: Colors.green[600],
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Seção de Aparência
+          _buildSectionCard(
+            title: 'Aparência',
+            icon: Icons.palette,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.color_lens, color: Colors.pink),
+                title: const Text('Tema'),
+                subtitle: const Text('Claro (padrão)'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Modo escuro chegando em breve! 🌙'),
+                      backgroundColor: Colors.blue,
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Seção de Ajuda
+          _buildSectionCard(
+            title: 'Ajuda e Suporte',
+            icon: Icons.help,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.help_outline, color: Colors.amber),
+                title: const Text('Tutorial'),
+                subtitle: const Text('Como usar o aplicativo'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showTutorialDialog(),
+              ),
+              
+              ListTile(
+                leading: const Icon(Icons.info, color: Colors.blue),
+                title: const Text('Sobre o App'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showAboutDialog(),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 32),
+          
+          // Botão de Emergência
+          Card(
+            color: Colors.red[50],
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
                 children: [
-                  const Text(
-                    'Este aplicativo foi desenvolvido para te ajudar a criar e manter hábitos saudáveis e produtivos.',
+                  Icon(
+                    Icons.warning_amber,
+                    color: Colors.red[700],
+                    size: 32,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Notificações não funcionando?',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.red[700],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Vá para Configurações do Android > Apps > Habit Tracker > Notificações e ative todas as permissões.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.red[600],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    onPressed: () => _openAppSettings(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[700],
+                      foregroundColor: Colors.white,
+                    ),
+                    icon: const Icon(Icons.settings),
+                    label: const Text('Abrir Configurações'),
                   ),
                 ],
-              );
-            },
+              ),
+            ),
           ),
-          // Podemos adicionar mais opções aqui no futuro, como:
-          // ListTile(
-          //   title: const Text('Tema (Claro/Escuro)'),
-          //   leading: const Icon(Icons.color_lens),
-          //   onTap: () { /* Lógica para mudar tema */ },
-          // ),
-          // ListTile(
-          //   title: const Text('Backup de Dados'),
-          //   leading: const Icon(Icons.backup),
-          //   onTap: () { /* Lógica de backup */ },
-          // ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSectionCard({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                Icon(icon, color: Colors.blue[700]),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blue[700],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Future<void> _testNotification() async {
+    final habitProvider = Provider.of<HabitProvider>(context, listen: false);
+    
+    if (habitProvider.habits.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Crie um hábito primeiro para testar as notificações!'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    
+    setState(() {
+      _isTestingNotification = true;
+    });
+
+    try {
+      // Usar o primeiro hábito para teste
+      final firstHabit = habitProvider.habits.first;
+      await habitProvider.testNotification(firstHabit);
+      
+      _showSuccessSnackBar('Notificação de teste enviada! Verifique a área de notificações.');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao enviar notificação: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isTestingNotification = false;
+      });
+    }
+  }
+
+  Future<void> _showLoadingDialog(String message) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        content: Row(
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(width: 16),
+            Text(message),
+          ],
+        ),
+      ),
+    );
+    
+    // Pequeno delay para mostrar o loading
+    await Future.delayed(const Duration(milliseconds: 500));
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 8),
+            Text(message),
+          ],
+        ),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  void _showNotificationStatusDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.info, color: Colors.blue),
+            SizedBox(width: 8),
+            Text('Status das Notificações'),
+          ],
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Informações detalhadas foram enviadas para o console de debug.',
+              style: TextStyle(fontSize: 16),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Verifique:',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            SizedBox(height: 8),
+            Text('• Permissões de notificação'),
+            Text('• Notificações agendadas'),
+            Text('• Status dos alarmes exatos'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showStatsDialog(HabitProvider habitProvider) {
+    int totalHabits = habitProvider.habits.length;
+    int habitsWithReminders = habitProvider.habits
+        .where((h) => h.reminderEnabled)
+        .length;
+    
+    DateTime now = DateTime.now();
+    int todayHabits = habitProvider.getTodayHabits(now).length;
+    int completedToday = habitProvider
+        .getTodayHabits(now)
+        .where((h) => h.isCompletedOn(now))
+        .length;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.analytics, color: Colors.purple),
+            SizedBox(width: 8),
+            Text('Estatísticas'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildStatRow('Total de hábitos', '$totalHabits'),
+            _buildStatRow('Hábitos com lembretes', '$habitsWithReminders'),
+            _buildStatRow('Hábitos para hoje', '$todayHabits'),
+            _buildStatRow('Concluídos hoje', '$completedToday'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showTutorialDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.school, color: Colors.amber),
+            SizedBox(width: 8),
+            Text('Como usar'),
+          ],
+        ),
+        content: const SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '🎯 Criando Hábitos:',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              Text('• Toque no botão verde "Novo Hábito"'),
+              Text('• Defina nome, frequência e lembretes'),
+              SizedBox(height: 12),
+              
+              Text(
+                '✅ Marcando como Concluído:',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              Text('• Toque no hábito na tela inicial'),
+              Text('• O círculo ficará verde quando concluído'),
+              SizedBox(height: 12),
+              
+              Text(
+                '📊 Acompanhando Progresso:',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              Text('• Vá para a aba "Progresso"'),
+              Text('• Veja estatísticas e sequências'),
+              SizedBox(height: 12),
+              
+              Text(
+                '🔔 Notificações:',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              Text('• Ative lembretes ao criar hábitos'),
+              Text('• Teste nas configurações'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Entendi!'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAboutDialog() {
+    showAboutDialog(
+      context: context,
+      applicationName: 'Habit Tracker',
+      applicationVersion: '1.0.0',
+      applicationIcon: const Icon(Icons.track_changes, size: 50, color: Colors.blue),
+      applicationLegalese: '© 2025 Habit Tracker App',
+      children: [
+        const SizedBox(height: 16),
+        const Text(
+          'Desenvolvido para te ajudar a criar e manter hábitos saudáveis.',
+          style: TextStyle(fontSize: 16),
+        ),
+        const SizedBox(height: 12),
+        const Text('✨ Funcionalidades:'),
+        const Text('• Hábitos personalizáveis'),
+        const Text('• Lembretes inteligentes'),
+        const Text('• Acompanhamento de progresso'),
+        const Text('• Interface responsiva'),
+      ],
+    );
+  }
+
+  void _openAppSettings() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Vá para: Configurações > Apps > Habit Tracker > Notificações',
+        ),
+        duration: Duration(seconds: 4),
+        backgroundColor: Colors.blue,
       ),
     );
   }

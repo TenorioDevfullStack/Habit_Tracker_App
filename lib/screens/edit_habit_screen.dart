@@ -33,7 +33,7 @@ class _EditHabitScreenState extends State<EditHabitScreen> {
     _nameController = TextEditingController(text: widget.habit.name);
     _selectedFrequency = widget.habit.frequency;
     _selectedReminderTime = widget.habit.reminderTime;
-    _notificationsEnabled = widget.habit.notificationsEnabled;
+    _notificationsEnabled = widget.habit.reminderEnabled;
     _xTimesCount = widget.habit.xTimesCount;
     _selectedSpecificDays = List.from(
       widget.habit.specificDays,
@@ -56,10 +56,10 @@ class _EditHabitScreenState extends State<EditHabitScreen> {
         specificDays: _selectedSpecificDays,
         xTimesCount: _xTimesCount,
         reminderTime: _selectedReminderTime,
-        notificationsEnabled: _notificationsEnabled,
-        completedDates: widget
+        reminderEnabled: _notificationsEnabled,
+        completionDates: widget
             .habit
-            .completedDates, // Mantém as datas de conclusão existentes
+            .completionDates, // Mantém as datas de conclusão existentes
       );
 
       // Chama o updateHabit do provider
