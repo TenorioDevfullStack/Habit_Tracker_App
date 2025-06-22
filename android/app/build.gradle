@@ -53,6 +53,11 @@ android {
 
     buildTypes {
         release {
+            // Configurações para release estável
+            minifyEnabled false
+            shrinkResources false
+            debuggable false
+            
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, but you should specify your own keystore file.
             signingConfig signingConfigs.debug

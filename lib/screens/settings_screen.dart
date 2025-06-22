@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/habit_provider.dart';
 import '../models/habit.dart';
-// Futuramente, se tivermos configurações que dependem de estado (ex: tema, notificações gerais)
-// poderíamos usar um provider ou outro gerenciador de estado aqui.
+import '../utils/app_settings.dart';
+import '../services/notification_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -77,6 +77,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       )
                     : const Icon(Icons.send),
                 onTap: _isTestingNotification ? null : () => _testNotification(),
+              ),
+
+              ListTile(
+                leading: const Icon(Icons.schedule, color: Colors.blue),
+                title: const Text('Teste Agendado (30s)'),
+                subtitle: const Text('Testar notificação agendada'),
+                trailing: const Icon(Icons.timer),
+                onTap: () => _testScheduledNotification(),
+              ),
+
+              ListTile(
+                leading: const Icon(Icons.help_outline, color: Colors.amber),
+                title: const Text('Guia de Solução'),
+                subtitle: const Text('Problemas com notificações?'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showTroubleshootingGuide(),
               ),
             ],
           ),
@@ -277,6 +293,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _isTestingNotification = false;
       });
+    }
+  }
+
+  Future<void> _testScheduledNotification() async {
+    try {
+      await NotificationService.sendTestScheduledNotification('Teste Debug', 30);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Notificação agendada para 30 segundos! Aguarde...'),
+          backgroundColor: Colors.blue,
+          duration: Duration(seconds: 5),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Erro no teste agendado: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -494,14 +531,149 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _openAppSettings() {
+    AppSettings.showManualInstructions();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(
-          'Vá para: Configurações > Apps > Habit Tracker > Notificações',
+          'Instruções detalhadas foram exibidas no console. Vá para: Configurações > Apps > Habit Tracker > Notificações',
         ),
         duration: Duration(seconds: 4),
         backgroundColor: Colors.blue,
       ),
+    );
+  }
+
+  void _showTroubleshootingGuide() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.help, color: Colors.amber),
+            SizedBox(width: 8),
+            Text('Guia de Solução'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Problemas comuns e soluções:',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+              ),
+              const SizedBox(height: 16),
+              
+              _buildTroubleshootItem(
+                '❌ Notificações não aparecem',
+                [
+                  'Verificar permissões do app',
+                  'Desativar modo "Não Perturbe"',
+                  'Verificar otimização de bateria',
+                  'Reiniciar o app',
+                ],
+              ),
+              
+              const SizedBox(height: 12),
+              
+              _buildTroubleshootItem(
+                '❌ Notificações atrasam',
+                [
+                  'Ativar "Alarmes e Lembretes"',
+                  'Desativar otimização de bateria',
+                  'Verificar timezone do sistema',
+                ],
+              ),
+              
+              const SizedBox(height: 12),
+              
+              _buildTroubleshootItem(
+                '❌ Param após reinicializar',
+                [
+                  'Permitir inicialização automática',
+                  'Reagendar nas configurações',
+                  'Não forçar parada do app',
+                ],
+              ),
+              
+              const SizedBox(height: 16),
+              
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '🔧 Configurações Importantes:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue[800],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '• Configurações > Apps > Habit Tracker > Notificações\n'
+                      '• Configurações > Apps > Acesso Especial > Alarmes\n'
+                      '• Configurações > Bateria > Otimização (Desativar)\n'
+                      '• Configurações > Apps > Inicialização Automática',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.blue[700],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Fechar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _openAppSettings();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Abrir Configurações'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTroubleshootItem(String problem, List<String> solutions) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          problem,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
+        const SizedBox(height: 4),
+        ...solutions.map((solution) => Padding(
+          padding: const EdgeInsets.only(left: 16, bottom: 2),
+          child: Text(
+            '• $solution',
+            style: const TextStyle(fontSize: 13),
+          ),
+        )),
+      ],
     );
   }
 }
