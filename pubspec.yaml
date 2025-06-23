@@ -23,6 +23,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.0 # Use a versão mais recente se quiser linting mais rigoroso
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
@@ -30,3 +31,13 @@ flutter:
   # Para o ícone de notificação do Android
   assets:
     - android/app/src/main/res/drawable/app_icon_notification.png # Certifique-se de ter este arquivo
+    - assets/app_icon.png
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/app_icon.png"
+  remove_alpha_ios: true
+  # Configuração para Android
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/app_icon.png"
