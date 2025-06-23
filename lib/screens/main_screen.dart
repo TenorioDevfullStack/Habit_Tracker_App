@@ -39,12 +39,11 @@ class _MainScreenState extends State<MainScreen> {
         ), // Exibe a tela correspondente ao índice selecionado
       ),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.blue, // Fundo azul para a barra de navegação
-        selectedItemColor: Colors.white, // Ícone/texto selecionado em branco
-        unselectedItemColor:
-            Colors.blue[200], // Ícone/texto não selecionado em azul claro
-        type: BottomNavigationBarType
-            .fixed, // Garante que todos os itens são visíveis e ocupam espaço fixo
+        backgroundColor: Theme.of(context).bottomNavigationBarTheme.backgroundColor,
+        selectedItemColor: Theme.of(context).bottomNavigationBarTheme.selectedItemColor,
+        unselectedItemColor: Theme.of(context).bottomNavigationBarTheme.unselectedItemColor,
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Hoje'),
           BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Hábitos'),

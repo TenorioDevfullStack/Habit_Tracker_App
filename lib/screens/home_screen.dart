@@ -20,6 +20,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final habitProvider = Provider.of<HabitProvider>(context);
     final todayHabits = habitProvider.getTodayHabits(DateTime.now());
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     // Para o cabeçalho "Bom dia! X de Y concluídos"
     final completedToday = todayHabits.where((h) => h.isCompletedOn(DateTime.now())).length;
@@ -43,7 +44,9 @@ class HomeScreen extends StatelessWidget {
             width: double.infinity,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.blue.shade700, Colors.blue.shade400],
+                colors: isDarkMode
+                    ? [const Color(0xFF1E1E1E), const Color(0xFF2A2A2A)]
+                    : [Colors.blue.shade700, Colors.blue.shade400],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -57,8 +60,8 @@ class HomeScreen extends StatelessWidget {
                     // Data e saudação
                     Text(
                       DateFormat('EEEE, d MMMM', 'pt_BR').format(now),
-                      style: const TextStyle(
-                        color: Colors.white70,
+                      style: TextStyle(
+                        color: isDarkMode ? Colors.grey[400] : Colors.white70,
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
@@ -79,7 +82,9 @@ class HomeScreen extends StatelessWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
+                        color: isDarkMode 
+                            ? Colors.white.withOpacity(0.05)
+                            : Colors.white.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: Colors.white.withOpacity(0.2),
@@ -97,7 +102,7 @@ class HomeScreen extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      totalToday > 0 
+                                      totalToday > 0
                                           ? '$completedToday de $totalToday concluídos'
                                           : 'Nenhum hábito para hoje',
                                       style: const TextStyle(
@@ -108,17 +113,18 @@ class HomeScreen extends StatelessWidget {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      totalToday > 0 
-                                          ? '${completionPercentage.toStringAsFixed(0)}% do progresso diário'
+                                      totalToday > 0
+                                          ? 'Continue assim! Você está indo bem! 🚀'
                                           : 'Que tal criar seu primeiro hábito?',
-                                      style: const TextStyle(
-                                        color: Colors.white70,
+                                      style: TextStyle(
+                                        color: isDarkMode ? Colors.grey[300] : Colors.white70,
                                         fontSize: 14,
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
+                              
                               if (totalToday > 0) ...[
                                 const SizedBox(width: 16),
                                 Container(
@@ -156,14 +162,11 @@ class HomeScreen extends StatelessWidget {
                           
                           if (totalToday > 0) ...[
                             const SizedBox(height: 12),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: completionPercentage / 100,
-                                backgroundColor: Colors.white.withOpacity(0.2),
-                                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                                minHeight: 6,
-                              ),
+                            LinearProgressIndicator(
+                              value: completionPercentage / 100,
+                              backgroundColor: Colors.white.withOpacity(0.2),
+                              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                              minHeight: 6,
                             ),
                           ],
                         ],
@@ -187,13 +190,17 @@ class HomeScreen extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(24),
                             decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
+                              color: isDarkMode 
+                                  ? Colors.blue.withOpacity(0.1)
+                                  : Colors.blue.shade50,
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               Icons.track_changes,
                               size: 64,
-                              color: Colors.blue.shade300,
+                              color: isDarkMode
+                                  ? Colors.blue[300]
+                                  : Colors.blue.shade300,
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -202,7 +209,7 @@ class HomeScreen extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: Colors.grey[700],
+                              color: Theme.of(context).textTheme.headlineLarge?.color,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -211,7 +218,7 @@ class HomeScreen extends StatelessWidget {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.grey[500],
+                              color: Theme.of(context).textTheme.bodyMedium?.color,
                               height: 1.4,
                             ),
                           ),
@@ -273,133 +280,152 @@ class HomeScreen extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(16),
                                   gradient: isCompleted
                                       ? LinearGradient(
-                                          colors: [
-                                            Colors.green.shade50,
-                                            Colors.green.shade100,
-                                          ],
+                                          colors: isDarkMode
+                                              ? [
+                                                  Colors.green.withOpacity(0.1),
+                                                  Colors.green.withOpacity(0.05),
+                                                ]
+                                              : [
+                                                  Colors.green.shade50,
+                                                  Colors.green.shade100,
+                                                ],
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                         )
                                       : null,
                                 ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(20.0),
-                                  child: Row(
-                                    children: [
-                                      // Checkbox animado
-                                      AnimatedContainer(
-                                        duration: const Duration(milliseconds: 200),
-                                        width: 32,
-                                        height: 32,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: isCompleted 
-                                              ? Colors.green 
-                                              : Colors.transparent,
-                                          border: isCompleted 
-                                              ? null 
-                                              : Border.all(
-                                                  color: Colors.grey.shade400, 
-                                                  width: 2
-                                                ),
+                                padding: const EdgeInsets.all(20),
+                                child: Row(
+                                  children: [
+                                    // Círculo de status
+                                    Container(
+                                      width: 50,
+                                      height: 50,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: isCompleted
+                                            ? Colors.green.shade100
+                                            : (isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey.shade100),
+                                        border: Border.all(
+                                          color: isCompleted
+                                              ? Colors.green.shade400
+                                              : (isDarkMode ? Colors.grey[600]! : Colors.grey.shade300),
+                                          width: 2,
                                         ),
-                                        child: isCompleted
-                                            ? const Icon(
-                                                Icons.check,
-                                                color: Colors.white,
-                                                size: 20,
-                                              )
-                                            : null,
                                       ),
-                                      const SizedBox(width: 16),
-                                      
-                                      // Conteúdo do hábito
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              habit.name,
-                                              style: TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.w600,
-                                                decoration: isCompleted
-                                                    ? TextDecoration.lineThrough
-                                                    : null,
-                                                color: isCompleted
-                                                    ? Colors.grey[600]
-                                                    : Colors.grey[800],
-                                              ),
+                                      child: Icon(
+                                        isCompleted ? Icons.check : Icons.radio_button_unchecked,
+                                        color: isCompleted
+                                            ? Colors.green.shade600
+                                            : (isDarkMode ? Colors.grey[400] : Colors.grey.shade400),
+                                        size: 24,
+                                      ),
+                                    ),
+                                    
+                                    const SizedBox(width: 16),
+                                    
+                                    // Informações do hábito
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            habit.name,
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w600,
+                                              decoration: isCompleted
+                                                  ? TextDecoration.lineThrough
+                                                  : null,
+                                              color: isCompleted
+                                                  ? (isDarkMode ? Colors.grey[400] : Colors.grey[600])
+                                                  : Theme.of(context).textTheme.bodyLarge?.color,
                                             ),
-                                            if (currentStreak > 0) ...[
-                                              const SizedBox(height: 6),
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.local_fire_department,
-                                                    size: 16,
-                                                    color: currentStreak >= 7 
-                                                        ? Colors.orange 
-                                                        : Colors.orange.shade300,
+                                          ),
+                                          
+                                          const SizedBox(height: 4),
+                                          
+                                          Row(
+                                            children: [
+                                              // Status de conclusão
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(
+                                                  horizontal: 8,
+                                                  vertical: 4,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: isCompleted
+                                                      ? Colors.green.withOpacity(0.2)
+                                                      : (isDarkMode 
+                                                          ? Colors.orange.withOpacity(0.2)
+                                                          : Colors.orange.shade100),
+                                                  borderRadius: BorderRadius.circular(12),
+                                                ),
+                                                child: Text(
+                                                  isCompleted ? 'Concluído ✅' : 'Pendente ⏳',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: isCompleted
+                                                        ? Colors.green.shade700
+                                                        : Colors.orange.shade700,
                                                   ),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    '$currentStreak ${currentStreak == 1 ? "dia" : "dias"} seguidos',
-                                                    style: TextStyle(
-                                                      fontSize: 14,
-                                                      color: Colors.grey[600],
-                                                      fontWeight: FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ],
+                                                ),
                                               ),
-                                            ],
-                                            if (habit.reminderEnabled && habit.reminderTime != null) ...[
-                                              const SizedBox(height: 4),
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.notifications_outlined,
-                                                    size: 14,
-                                                    color: Colors.blue.shade400,
+                                              
+                                              const SizedBox(width: 8),
+                                              
+                                              // Sequência (streak)
+                                              if (currentStreak > 0) ...[
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
                                                   ),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    '${habit.reminderTime!.hour.toString().padLeft(2, '0')}:${habit.reminderTime!.minute.toString().padLeft(2, '0')}',
+                                                  decoration: BoxDecoration(
+                                                    color: isDarkMode
+                                                        ? Colors.blue.withOpacity(0.2)
+                                                        : Colors.blue.shade100,
+                                                    borderRadius: BorderRadius.circular(12),
+                                                  ),
+                                                  child: Text(
+                                                    '🔥 $currentStreak ${currentStreak == 1 ? 'dia' : 'dias'}',
                                                     style: TextStyle(
                                                       fontSize: 12,
-                                                      color: Colors.blue.shade600,
+                                                      fontWeight: FontWeight.w500,
+                                                      color: Colors.blue.shade700,
                                                     ),
                                                   ),
-                                                ],
-                                              ),
+                                                ),
+                                              ],
                                             ],
-                                          ],
-                                        ),
-                                      ),
-                                      
-                                      // Status visual
-                                      if (isCompleted)
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
                                           ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.green.shade100,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Text(
-                                            '✓ Feito',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.green.shade700,
-                                              fontWeight: FontWeight.w600,
+                                          
+                                          // Lembrete ativo
+                                          if (habit.reminderEnabled && habit.reminderTime != null) ...[
+                                            const SizedBox(height: 4),
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.notifications_active,
+                                                  size: 14,
+                                                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  'Lembrete: ${habit.reminderTime!.hour.toString().padLeft(2, '0')}:${habit.reminderTime!.minute.toString().padLeft(2, '0')}',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),

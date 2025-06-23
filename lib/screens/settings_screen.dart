@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/habit_provider.dart';
+import '../providers/theme_provider.dart';
 import '../models/habit.dart';
 import '../utils/app_settings.dart';
 import '../services/notification_service.dart';
@@ -20,12 +21,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final habitProvider = Provider.of<HabitProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
     
     return Scaffold(
       appBar: AppBar(
         title: const Text('Configurações'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         elevation: 0,
       ),
       body: ListView(
@@ -64,15 +66,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               
               ListTile(
                 leading: Icon(
-                  Icons.bug_report, 
-                  color: _isTestingNotification ? Colors.grey : Colors.green,
+                  _isTestingNotification ? Icons.hourglass_empty : Icons.notifications_active,
+                  color: _isTestingNotification ? Colors.amber : Colors.green,
                 ),
-                title: const Text('Testar Notificação'),
-                subtitle: const Text('Enviar notificação de teste agora'),
+                title: const Text('Teste de Notificação'),
+                subtitle: const Text('Enviar notificação imediata'),
                 trailing: _isTestingNotification 
                     ? const SizedBox(
-                        width: 16,
-                        height: 16,
+                        width: 20,
+                        height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.send),
@@ -80,19 +82,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
 
               ListTile(
-                leading: const Icon(Icons.schedule, color: Colors.blue),
-                title: const Text('Teste Agendado (30s)'),
-                subtitle: const Text('Testar notificação agendada'),
-                trailing: const Icon(Icons.timer),
+                leading: const Icon(Icons.schedule, color: Colors.purple),
+                title: const Text('Teste Agendado (10s)'),
+                subtitle: const Text('Notificação em 10 segundos'),
+                trailing: const Icon(Icons.schedule_send),
                 onTap: () => _testScheduledNotification(),
-              ),
-
-              ListTile(
-                leading: const Icon(Icons.help_outline, color: Colors.amber),
-                title: const Text('Guia de Solução'),
-                subtitle: const Text('Problemas com notificações?'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => _showTroubleshootingGuide(),
               ),
             ],
           ),
@@ -131,19 +125,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: 'Aparência',
             icon: Icons.palette,
             children: [
+              // Toggle Modo Escuro
+              ListTile(
+                leading: Icon(
+                  themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                  color: themeProvider.isDarkMode ? Colors.orange : Colors.yellow,
+                ),
+                title: const Text('Modo Escuro'),
+                subtitle: Text('Tema: ${themeProvider.currentThemeName}'),
+                trailing: Switch(
+                  value: themeProvider.isDarkMode,
+                  onChanged: (value) {
+                    themeProvider.toggleTheme();
+                  },
+                  activeColor: Colors.blue,
+                ),
+              ),
+              
+              // Opções de Tema
               ListTile(
                 leading: const Icon(Icons.color_lens, color: Colors.pink),
-                title: const Text('Tema'),
-                subtitle: const Text('Claro (padrão)'),
+                title: const Text('Opções de Tema'),
+                subtitle: const Text('Escolher modo do tema'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Modo escuro chegando em breve! 🌙'),
-                      backgroundColor: Colors.blue,
-                    ),
-                  );
-                },
+                onTap: () => _showThemeOptionsDialog(themeProvider),
               ),
             ],
           ),
@@ -175,49 +180,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 32),
           
           // Botão de Emergência
-          Card(
-            color: Colors.red[50],
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.warning_amber,
-                    color: Colors.red[700],
-                    size: 32,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Notificações não funcionando?',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.red[700],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Vá para Configurações do Android > Apps > Habit Tracker > Notificações e ative todas as permissões.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.red[600],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    onPressed: () => _openAppSettings(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red[700],
-                      foregroundColor: Colors.white,
-                    ),
-                    icon: const Icon(Icons.settings),
-                    label: const Text('Abrir Configurações'),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          _buildEmergencyResetButton(habitProvider),
+          
+          const SizedBox(height: 16),
+          
+          // Informações adicionais
+          _buildInfoCard(),
         ],
       ),
     );
@@ -674,6 +642,146 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         )),
       ],
+    );
+  }
+
+  // Diálogo para escolher opções de tema
+  void _showThemeOptionsDialog(ThemeProvider themeProvider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.palette, color: Colors.pink),
+            SizedBox(width: 8),
+            Text('Escolher Tema'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RadioListTile<ThemeMode>(
+              title: const Text('🌞 Claro'),
+              subtitle: const Text('Sempre usar tema claro'),
+              value: ThemeMode.light,
+              groupValue: themeProvider.themeMode,
+              onChanged: (value) {
+                themeProvider.setLightMode();
+                Navigator.of(context).pop();
+              },
+            ),
+            RadioListTile<ThemeMode>(
+              title: const Text('🌙 Escuro'),
+              subtitle: const Text('Sempre usar tema escuro'),
+              value: ThemeMode.dark,
+              groupValue: themeProvider.themeMode,
+              onChanged: (value) {
+                themeProvider.setDarkMode();
+                Navigator.of(context).pop();
+              },
+            ),
+            RadioListTile<ThemeMode>(
+              title: const Text('🔄 Sistema'),
+              subtitle: const Text('Seguir configuração do sistema'),
+              value: ThemeMode.system,
+              groupValue: themeProvider.themeMode,
+              onChanged: (value) {
+                themeProvider.setSystemMode();
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmergencyResetButton(HabitProvider habitProvider) {
+    return Card(
+      color: Colors.red[50],
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Icon(
+              Icons.warning_amber,
+              color: Colors.red[700],
+              size: 32,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Notificações não funcionando?',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.red[700],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Vá para Configurações do Android > Apps > Habit Tracker > Notificações e ative todas as permissões.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.red[600],
+              ),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: () => _openAppSettings(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[700],
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.settings),
+              label: const Text('Abrir Configurações'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCard() {
+    return Card(
+      color: Colors.blue[50],
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '🔧 Informações Adicionais:',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Colors.blue[800],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '• Este aplicativo é um projeto de aprendizado. Use-o com responsabilidade.',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.blue[700],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '• Contribua com o código no GitHub: https://github.com/seu-usuario/habit-tracker',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.blue[700],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

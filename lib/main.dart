@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:habit_tracker_app/providers/habit_provider.dart';
+import 'package:habit_tracker_app/providers/theme_provider.dart';
 import 'package:habit_tracker_app/screens/main_screen.dart';
 import 'package:habit_tracker_app/services/notification_service.dart';
 import 'package:timezone/data/latest_all.dart';
@@ -32,15 +33,28 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => HabitProvider(),
-      child: MaterialApp(
-        title: 'Habit Tracker',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          visualDensity: VisualDensity.adaptivePlatformDensity,
-        ),
-        home: const MainScreen(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => HabitProvider()),
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+      ],
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            title: 'Habit Tracker',
+            debugShowCheckedModeBanner: false,
+            
+            // Configuração de temas
+            theme: ThemeProvider.lightTheme,
+            darkTheme: ThemeProvider.darkTheme,
+            themeMode: themeProvider.themeMode,
+            
+            // Configuração de localização
+            locale: const Locale('pt', 'BR'),
+            
+            home: const MainScreen(),
+          );
+        },
       ),
     );
   }
