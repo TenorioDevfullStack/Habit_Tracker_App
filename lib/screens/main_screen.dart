@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:habit_tracker_app/screens/home_screen.dart';
 import 'package:habit_tracker_app/screens/habits_screen.dart';
 import 'package:habit_tracker_app/screens/progress_screen.dart';
+import 'package:habit_tracker_app/screens/gamification_screen.dart';
 import 'package:habit_tracker_app/screens/settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -21,6 +22,7 @@ class _MainScreenState extends State<MainScreen> {
     HomeScreen(),
     HabitsScreen(),
     ProgressScreen(),
+    GamificationScreen(),
     SettingsScreen(),
   ];
 
@@ -49,7 +51,11 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Hábitos'),
           BottomNavigationBarItem(
             icon: Icon(Icons.bar_chart),
-            label: 'Progresso',
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.gamepad),
+            label: 'Gamificação',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),

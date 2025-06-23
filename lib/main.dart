@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:habit_tracker_app/providers/habit_provider.dart';
 import 'package:habit_tracker_app/providers/theme_provider.dart';
+import 'package:habit_tracker_app/providers/gamification_provider.dart';
 import 'package:habit_tracker_app/screens/main_screen.dart';
 import 'package:habit_tracker_app/services/notification_service.dart';
 import 'package:timezone/data/latest_all.dart';
@@ -35,8 +36,15 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => HabitProvider()),
+        ChangeNotifierProvider(create: (context) => GamificationProvider()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProxyProvider<GamificationProvider, HabitProvider>(
+          create: (context) => HabitProvider(),
+          update: (context, gamificationProvider, habitProvider) {
+            habitProvider!.setGamificationProvider(gamificationProvider);
+            return habitProvider;
+          },
+        ),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

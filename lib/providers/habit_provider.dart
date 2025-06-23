@@ -6,8 +6,10 @@ import '../models/habit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../services/notification_service.dart';
+import 'gamification_provider.dart';
 
 class HabitProvider with ChangeNotifier {
+  GamificationProvider? _gamificationProvider;
   List<Habit> _habits = [];
   final Uuid uuid = Uuid();
 
@@ -15,6 +17,11 @@ class HabitProvider with ChangeNotifier {
 
   HabitProvider() {
     _loadHabits();
+  }
+
+  // Conectar com o provider de gamificação
+  void setGamificationProvider(GamificationProvider gamificationProvider) {
+    _gamificationProvider = gamificationProvider;
   }
 
   Future<void> _loadHabits() async {
@@ -71,13 +78,32 @@ class HabitProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleHabitCompletion(Habit habit, DateTime date) {
+  void toggleHabitCompletion(Habit habit, DateTime date) async {
     final dateKey = '${date.year}-${date.month}-${date.day}';
+    bool wasCompleted = habit.completionDates.contains(dateKey);
     
-    if (habit.completionDates.contains(dateKey)) {
+    if (wasCompleted) {
       habit.completionDates.remove(dateKey);
     } else {
       habit.completionDates.add(dateKey);
+      
+      // Dar XP pela conclusão do hábito
+      if (_gamificationProvider != null) {
+        final userProfile = _gamificationProvider!.userProfile;
+        final xpGained = userProfile.xpPerCompletion;
+        
+        final hadLevelUp = await _gamificationProvider!.addXP(xpGained, reason: 'habit_completion');
+        
+        // Atualizar progresso das metas
+        final todayHabits = getTodayHabits(date);
+        final completedToday = todayHabits.where((h) => h.isCompletedOn(date)).length;
+        await _gamificationProvider!.updateGoalsProgress(completedToday);
+        
+        if (hadLevelUp) {
+          // Pode mostrar animação de level up aqui no futuro
+          debugPrint('🎉 LEVEL UP! Novo nível: ${userProfile.levelName}');
+        }
+      }
     }
     
     _saveHabits();
