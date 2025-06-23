@@ -16,6 +16,9 @@ class UserProfile {
   List<String> unlockedBadges;
   List<String> unlockedThemes;
   String currentTheme;
+  List<String> unlockedAvatars;
+  String currentAvatarFrame;
+  String currentAvatarEffect;
   DateTime createdAt;
   DateTime lastActiveDate;
   Map<String, int> statistics;
@@ -29,12 +32,16 @@ class UserProfile {
     List<String>? unlockedBadges,
     List<String>? unlockedThemes,
     this.currentTheme = 'default',
+    List<String>? unlockedAvatars,
+    this.currentAvatarFrame = 'default',
+    this.currentAvatarEffect = 'default',
     DateTime? createdAt,
     DateTime? lastActiveDate,
     Map<String, int>? statistics,
   }) : id = id ?? const Uuid().v4(),
        unlockedBadges = unlockedBadges ?? [],
        unlockedThemes = unlockedThemes ?? ['default'],
+       unlockedAvatars = unlockedAvatars ?? ['default'],
        createdAt = createdAt ?? DateTime.now(),
        lastActiveDate = lastActiveDate ?? DateTime.now(),
        statistics = statistics ?? {};
@@ -155,6 +162,13 @@ class UserProfile {
     }
   }
 
+  // Desbloquear avatar
+  void unlockAvatar(String avatarId) {
+    if (!unlockedAvatars.contains(avatarId)) {
+      unlockedAvatars.add(avatarId);
+    }
+  }
+
   // Comprar item com moedas
   bool spendCoins(int amount) {
     if (coins >= amount) {
@@ -180,6 +194,9 @@ class UserProfile {
       'unlockedBadges': unlockedBadges,
       'unlockedThemes': unlockedThemes,
       'currentTheme': currentTheme,
+      'unlockedAvatars': unlockedAvatars,
+      'currentAvatarFrame': currentAvatarFrame,
+      'currentAvatarEffect': currentAvatarEffect,
       'createdAt': createdAt.toIso8601String(),
       'lastActiveDate': lastActiveDate.toIso8601String(),
       'statistics': statistics,
@@ -196,6 +213,9 @@ class UserProfile {
       unlockedBadges: List<String>.from(json['unlockedBadges'] ?? []),
       unlockedThemes: List<String>.from(json['unlockedThemes'] ?? ['default']),
       currentTheme: json['currentTheme'] ?? 'default',
+      unlockedAvatars: List<String>.from(json['unlockedAvatars'] ?? ['default']),
+      currentAvatarFrame: json['currentAvatarFrame'] ?? 'default',
+      currentAvatarEffect: json['currentAvatarEffect'] ?? 'default',
       createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
       lastActiveDate: DateTime.parse(json['lastActiveDate'] ?? DateTime.now().toIso8601String()),
       statistics: Map<String, int>.from(json['statistics'] ?? {}),

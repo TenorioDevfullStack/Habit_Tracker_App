@@ -11,6 +11,7 @@ class GamificationProvider with ChangeNotifier {
   List<Goal> _goals = [];
   List<Map<String, dynamic>> _availableBadges = [];
   List<Map<String, dynamic>> _availableThemes = [];
+  List<Map<String, dynamic>> _availableAvatars = [];
   bool _isLoading = false;
 
   // Getters
@@ -21,12 +22,14 @@ class GamificationProvider with ChangeNotifier {
   List<Goal> get expiredGoals => _goals.where((g) => g.isExpired).toList();
   List<Map<String, dynamic>> get availableBadges => _availableBadges;
   List<Map<String, dynamic>> get availableThemes => _availableThemes;
+  List<Map<String, dynamic>> get availableAvatars => _availableAvatars;
   bool get isLoading => _isLoading;
 
   // Construtor
   GamificationProvider() {
     _initializeBadges();
     _initializeThemes();
+    _initializeAvatars();
     loadData();
   }
 
@@ -72,43 +75,51 @@ class GamificationProvider with ChangeNotifier {
         'name': 'Padrão',
         'description': 'Tema padrão do app',
         'price': 0,
+        'category': 'basic',
         'colors': {
           'primary': 0xFF2196F3,
           'accent': 0xFF03DAC6,
         },
+        'gradient': [0xFF2196F3, 0xFF21CBF3],
         'unlocked': true,
       },
       {
         'id': 'dark_blue',
         'name': 'Azul Escuro',
-        'description': 'Tema azul profundo',
+        'description': 'Profundezas do oceano',
         'price': 50,
+        'category': 'premium',
         'colors': {
           'primary': 0xFF1565C0,
           'accent': 0xFF64B5F6,
         },
+        'gradient': [0xFF0D47A1, 0xFF1976D2],
         'unlocked': false,
       },
       {
         'id': 'green_nature',
         'name': 'Verde Natureza',
-        'description': 'Inspirado na natureza',
+        'description': 'Inspirado na floresta',
         'price': 75,
+        'category': 'premium',
         'colors': {
-          'primary': 0xFF4CAF50,
-          'accent': 0xFF8BC34A,
+          'primary': 0xFF388E3C,
+          'accent': 0xFF66BB6A,
         },
+        'gradient': [0xFF1B5E20, 0xFF4CAF50],
         'unlocked': false,
       },
       {
         'id': 'purple_royal',
         'name': 'Roxo Real',
-        'description': 'Elegância roxa',
+        'description': 'Elegância majestosa',
         'price': 100,
+        'category': 'premium',
         'colors': {
-          'primary': 0xFF673AB7,
-          'accent': 0xFF9C27B0,
+          'primary': 0xFF512DA8,
+          'accent': 0xFF7E57C2,
         },
+        'gradient': [0xFF4A148C, 0xFF673AB7],
         'unlocked': false,
       },
       {
@@ -116,21 +127,140 @@ class GamificationProvider with ChangeNotifier {
         'name': 'Pôr do Sol',
         'description': 'Cores do entardecer',
         'price': 125,
+        'category': 'premium',
         'colors': {
-          'primary': 0xFFFF9800,
-          'accent': 0xFFFF5722,
+          'primary': 0xFFE65100,
+          'accent': 0xFFFF8F00,
         },
+        'gradient': [0xFFBF360C, 0xFFFF5722],
         'unlocked': false,
       },
       {
         'id': 'red_passion',
         'name': 'Paixão Vermelha',
-        'description': 'Vermelho intenso',
+        'description': 'Intensidade ardente',
         'price': 150,
+        'category': 'premium',
         'colors': {
-          'primary': 0xFFF44336,
-          'accent': 0xFFE91E63,
+          'primary': 0xFFC62828,
+          'accent': 0xFFE57373,
         },
+        'gradient': [0xFFB71C1C, 0xFFF44336],
+        'unlocked': false,
+      },
+      {
+        'id': 'cyber_neon',
+        'name': 'Cyber Neon',
+        'description': 'Futuro tecnológico',
+        'price': 175,
+        'category': 'epic',
+        'colors': {
+          'primary': 0xFF00BCD4,
+          'accent': 0xFF00E5FF,
+        },
+        'gradient': [0xFF006064, 0xFF0097A7],
+        'unlocked': false,
+      },
+      {
+        'id': 'gold_luxury',
+        'name': 'Ouro Luxuoso',
+        'description': 'Riqueza e sofisticação',
+        'price': 200,
+        'category': 'epic',
+        'colors': {
+          'primary': 0xFFFFB300,
+          'accent': 0xFFFFC107,
+        },
+        'gradient': [0xFFE65100, 0xFFFFB300],
+        'unlocked': false,
+      },
+      {
+        'id': 'rainbow_magic',
+        'name': 'Arco-íris Mágico',
+        'description': 'Cores que inspiram',
+        'price': 250,
+        'category': 'legendary',
+        'colors': {
+          'primary': 0xFF9C27B0,
+          'accent': 0xFF00BCD4,
+        },
+        'gradient': [0xFF9C27B0, 0xFF2196F3, 0xFF00BCD4],
+        'unlocked': false,
+      },
+    ];
+  }
+
+  // Inicializar avatares e efeitos disponíveis
+  void _initializeAvatars() {
+    _availableAvatars = [
+      {
+        'id': 'default',
+        'name': 'Avatar Padrão',
+        'description': 'Avatar básico do nível',
+        'price': 0,
+        'category': 'basic',
+        'type': 'frame',
+        'effect': 'none',
+        'unlocked': true,
+      },
+      {
+        'id': 'golden_frame',
+        'name': 'Moldura Dourada',
+        'description': 'Frame dourado elegante',
+        'price': 30,
+        'category': 'premium',
+        'type': 'frame',
+        'effect': 'golden_border',
+        'unlocked': false,
+      },
+      {
+        'id': 'silver_frame',
+        'name': 'Moldura Prateada',
+        'description': 'Frame prateado moderno',
+        'price': 25,
+        'category': 'premium',
+        'type': 'frame',
+        'effect': 'silver_border',
+        'unlocked': false,
+      },
+      {
+        'id': 'neon_glow',
+        'name': 'Brilho Neon',
+        'description': 'Efeito de brilho colorido',
+        'price': 50,
+        'category': 'epic',
+        'type': 'effect',
+        'effect': 'neon_glow',
+        'unlocked': false,
+      },
+      {
+        'id': 'pulse_animation',
+        'name': 'Animação Pulse',
+        'description': 'Efeito de pulsação suave',
+        'price': 40,
+        'category': 'epic',
+        'type': 'effect',
+        'effect': 'pulse',
+        'unlocked': false,
+      },
+      {
+        'id': 'rainbow_border',
+        'name': 'Borda Arco-íris',
+        'description': 'Frame com cores do arco-íris',
+        'price': 75,
+        'category': 'legendary',
+        'type': 'frame',
+        'effect': 'rainbow_border',
+        'unlocked': false,
+      },
+      {
+        'id': 'fire_effect',
+        'name': 'Efeito de Fogo',
+        'description': 'Chamas ao redor do avatar',
+        'price': 100,
+        'category': 'legendary',
+        'type': 'effect',
+        'effect': 'fire_animation',
         'unlocked': false,
       },
     ];
@@ -331,6 +461,36 @@ class GamificationProvider with ChangeNotifier {
   Future<void> changeTheme(String themeId) async {
     if (_userProfile.unlockedThemes.contains(themeId)) {
       _userProfile.currentTheme = themeId;
+      await saveData();
+      notifyListeners();
+    }
+  }
+
+  // Comprar avatar/efeito
+  Future<bool> purchaseAvatar(String avatarId) async {
+    final avatar = _availableAvatars.firstWhere((a) => a['id'] == avatarId);
+    final price = avatar['price'] as int;
+
+    if (_userProfile.spendCoins(price)) {
+      _userProfile.unlockAvatar(avatarId);
+      avatar['unlocked'] = true;
+      await saveData();
+      notifyListeners();
+      return true;
+    }
+
+    return false;
+  }
+
+  // Equipar avatar/efeito
+  Future<void> equipAvatar(String avatarId) async {
+    if (_userProfile.unlockedAvatars.contains(avatarId)) {
+      final avatar = _availableAvatars.firstWhere((a) => a['id'] == avatarId);
+      if (avatar['type'] == 'frame') {
+        _userProfile.currentAvatarFrame = avatarId;
+      } else {
+        _userProfile.currentAvatarEffect = avatarId;
+      }
       await saveData();
       notifyListeners();
     }

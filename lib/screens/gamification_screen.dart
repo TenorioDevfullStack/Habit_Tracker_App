@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/gamification_provider.dart';
 import '../models/user_profile.dart';
 import '../models/goal.dart';
+import 'theme_store_screen.dart';
 
 class GamificationScreen extends StatefulWidget {
   const GamificationScreen({super.key});
@@ -94,22 +95,7 @@ class _GamificationScreenState extends State<GamificationScreen> with TickerProv
                   // Avatar e informações básicas
                   Row(
                     children: [
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [Colors.blue.shade400, Colors.blue.shade600],
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            userProfile.levelEmoji,
-                            style: const TextStyle(fontSize: 32),
-                          ),
-                        ),
-                      ),
+                      _buildCustomAvatar(userProfile, provider),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
@@ -235,6 +221,14 @@ class _GamificationScreenState extends State<GamificationScreen> with TickerProv
                   subtitle: Text(userProfile.username),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () => _showEditUsernameDialog(context, provider),
+                ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.store, color: Colors.blue),
+                  title: const Text('🏪 Loja de Temas'),
+                  subtitle: Text('${provider.userProfile.coins} moedas disponíveis'),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () => _openThemeStore(context),
                 ),
                 const Divider(),
                 ListTile(
@@ -699,5 +693,126 @@ class _GamificationScreenState extends State<GamificationScreen> with TickerProv
         ],
       ),
     );
+  }
+
+  void _openThemeStore(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ThemeStoreScreen(),
+      ),
+    );
+  }
+
+  Widget _buildCustomAvatar(UserProfile userProfile, GamificationProvider provider) {
+    // Obter tema atual
+    final currentTheme = provider.getTheme(userProfile.currentTheme);
+    final avatarFrame = provider.availableAvatars
+        .where((a) => a['id'] == userProfile.currentAvatarFrame)
+        .firstOrNull;
+    final avatarEffect = provider.availableAvatars
+        .where((a) => a['id'] == userProfile.currentAvatarEffect)
+        .firstOrNull;
+
+    // Cores do tema
+    final primaryColor = currentTheme != null 
+        ? Color((currentTheme['colors'] as Map)['primary'] as int)
+        : Colors.blue.shade400;
+    final accentColor = currentTheme != null 
+        ? Color((currentTheme['colors'] as Map)['accent'] as int)
+        : Colors.blue.shade600;
+
+    // Borda customizada
+    BoxBorder? customBorder;
+    if (avatarFrame != null) {
+      switch (avatarFrame['effect']) {
+        case 'golden_border':
+          customBorder = Border.all(color: Colors.amber, width: 4);
+          break;
+        case 'silver_border':
+          customBorder = Border.all(color: Colors.grey.shade300, width: 4);
+          break;
+        case 'rainbow_border':
+          customBorder = Border.all(color: Colors.purple, width: 4);
+          break;
+      }
+    }
+
+    Widget avatar = Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: [primaryColor, accentColor],
+        ),
+        border: customBorder,
+      ),
+      child: Center(
+        child: Text(
+          userProfile.levelEmoji,
+          style: const TextStyle(fontSize: 32),
+        ),
+      ),
+    );
+
+    // Aplicar efeitos especiais
+    if (avatarEffect != null) {
+      switch (avatarEffect['effect']) {
+        case 'neon_glow':
+          avatar = Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: primaryColor.withOpacity(0.6),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            child: avatar,
+          );
+          break;
+        case 'pulse':
+          avatar = AnimatedContainer(
+            duration: const Duration(seconds: 1),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.pink.withOpacity(0.4),
+                  blurRadius: 15,
+                  spreadRadius: 3,
+                ),
+              ],
+            ),
+            child: avatar,
+          );
+          break;
+        case 'fire_animation':
+          avatar = Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.orange.withOpacity(0.8),
+                  blurRadius: 25,
+                  spreadRadius: 8,
+                ),
+                BoxShadow(
+                  color: Colors.red.withOpacity(0.6),
+                  blurRadius: 15,
+                  spreadRadius: 3,
+                ),
+              ],
+            ),
+            child: avatar,
+          );
+          break;
+      }
+    }
+
+    return avatar;
   }
 } 
